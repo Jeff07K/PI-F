@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Request, Query
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, Response, Cookie
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import SQLModel, Session, create_engine, select
-from models import Genero, Manga  # Asegúrate de que models.py tenga las clases
+from typing import Optional
+from models import Genero, Manga, Usuario, Comentario
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -14,58 +16,102 @@ engine = create_engine(f"sqlite:///{sqlite_file_name}")
 def on_startup():
     SQLModel.metadata.create_all(engine)
 
-# --- RUTA PARA CREAR 10 MANGAS DE GOLPE ---
-@app.post("/crear-datos-dummy")
-def crear_datos():
+# --- SISTEMA DE LOGIN (NUEVO) ---
+@app.post("/registro")
+def registrar(request: Request, username: str = Form(...), password: str = Form(...)):
     with Session(engine) as session:
-        # 1. Asegurar que existan los géneros
-        nombres_generos = ["Shonen", "Seinen", "Shojo", "Terror"]
-        mapa_generos = {} # Diccionario para guardar los IDs
-
-        for nombre in nombres_generos:
-            genero = session.exec(select(Genero).where(Genero.nombre == nombre)).first()
-            if not genero:
-                genero = Genero(nombre=nombre)
-                session.add(genero)
-                session.commit()
-                session.refresh(genero)
-            mapa_generos[nombre] = genero.id
-
-        # 2. Lista de Mangas para agregar (Títulos y Portadas Reales)
-        lista_mangas = [
-            {"titulo": "One Piece", "autor": "Eiichiro Oda", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg"},
-            {"titulo": "Dragon Ball Z", "autor": "Akira Toriyama", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/0/04/Dragon_Ball_Z_manga_vol_1.jpg"},
-            {"titulo": "Attack on Titan", "autor": "Hajime Isayama", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/d/d6/Shingeki_no_Kyojin_manga_volume_1.jpg"},
-            {"titulo": "Demon Slayer", "autor": "Koyoharu Gotouge", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/6/69/Kimetsu_no_Yaiba_1.png"},
-            {"titulo": "Death Note", "autor": "Tsugumi Ohba", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/6/6f/Death_Note_Vol_1.jpg"},
-            {"titulo": "Fullmetal Alchemist", "autor": "Hiromu Arakawa", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/9/9d/Fullmetal_Alchemist_vol_01_en.jpg"},
-            {"titulo": "Tokyo Ghoul", "autor": "Sui Ishida", "genero": "Seinen", "img": "https://upload.wikimedia.org/wikipedia/en/e/e5/Tokyo_Ghoul_volume_1_cover.jpg"},
-            {"titulo": "Chainsaw Man", "autor": "Tatsuki Fujimoto", "genero": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/d/d3/Chainsaw_Man_vol._1.jpg"},
-            {"titulo": "Sailor Moon", "autor": "Naoko Takeuchi", "genero": "Shojo", "img": "https://upload.wikimedia.org/wikipedia/en/0/06/Sailor_Moon_Volume_1_Kanzeban_Cover.jpg"},
-            {"titulo": "Uzumaki", "autor": "Junji Ito", "genero": "Terror", "img": "https://upload.wikimedia.org/wikipedia/en/thumb/9/90/Uzumaki_manga_cover.jpg/220px-Uzumaki_manga_cover.jpg"}
-        ]
-
-        # 3. Insertar solo si no existen
-        for item in lista_mangas:
-            existe = session.exec(select(Manga).where(Manga.titulo == item["titulo"])).first()
-            if not existe:
-                nuevo_manga = Manga(
-                    titulo=item["titulo"],
-                    autor=item["autor"],
-                    portada_url=item["img"],
-                    genero_id=mapa_generos[item["genero"]]
-                )
-                session.add(nuevo_manga)
-        
+        user = Usuario(username=username, password=password)
+        session.add(user)
         session.commit()
+    return RedirectResponse(url="/mangas", status_code=303)
+
+@app.post("/login")
+def login(response: Response, username: str = Form(...), password: str = Form(...)):
+    with Session(engine) as session:
+        user = session.exec(select(Usuario).where(Usuario.username == username, Usuario.password == password)).first()
+        if user:
+            # Guardamos el usuario en una cookie (forma rápida para el examen)
+            response = RedirectResponse(url="/mangas", status_code=303)
+            response.set_cookie(key="usuario_id", value=str(user.id))
+            return response
+    return RedirectResponse(url="/mangas", status_code=303)
+
+@app.get("/logout")
+def logout(response: Response):
+    response = RedirectResponse(url="/mangas", status_code=303)
+    response.delete_cookie("usuario_id")
+    return response
+
+# --- COMENTARIOS (NUEVO) ---
+@app.post("/comentar/{manga_id}")
+def comentar(manga_id: int, texto: str = Form(...), usuario_id: Optional[str] = Cookie(None)):
+    if not usuario_id:
+        return RedirectResponse(url="/mangas", status_code=303)
     
-    return {"mensaje": "¡10 Mangas agregados con éxito!"}
-# RUTA DEL BUSCADOR Y LISTADO
+    with Session(engine) as session:
+        nuevo_comentario = Comentario(texto=texto, manga_id=manga_id, usuario_id=int(usuario_id))
+        session.add(nuevo_comentario)
+        session.commit()
+    return RedirectResponse(url="/mangas", status_code=303)
+
+# --- RUTA PRINCIPAL (Buscador mejorado) ---
 @app.get("/mangas", response_class=HTMLResponse)
-def listar_mangas(request: Request, buscar: str = Query(None)):
+def listar_mangas(request: Request, buscar: str = None, genero_id: int = None, usuario_id: Optional[str] = Cookie(None)):
     with Session(engine) as session:
         query = select(Manga)
         if buscar:
             query = query.where(Manga.titulo.contains(buscar))
+        if genero_id and genero_id != 0:
+            query = query.where(Manga.genero_id == genero_id)
+            
         mangas = session.exec(query).all()
-    return templates.TemplateResponse("mangas.html", {"request": request, "mangas": mangas, "busqueda_actual": buscar})
+        generos = session.exec(select(Genero)).all()
+        
+        # Verificar si hay usuario logueado
+        usuario_actual = None
+        if usuario_id:
+            usuario_actual = session.get(Usuario, int(usuario_id))
+
+    return templates.TemplateResponse("mangas.html", {
+        "request": request, 
+        "mangas": mangas, 
+        "generos": generos,
+        "usuario": usuario_actual,
+        "busqueda_actual": buscar
+    })
+
+# --- DATOS CON IMÁGENES ARREGLADAS ---
+@app.post("/crear-datos-dummy")
+def crear_datos():
+    with Session(engine) as session:
+        if session.exec(select(Genero)).first(): return {"mensaje": "Ya existen datos"}
+        
+        # 1. Géneros
+        nombres = ["Shonen", "Seinen", "Shojo", "Terror", "Deportes"]
+        gens = {}
+        for n in nombres:
+            g = Genero(nombre=n)
+            session.add(g)
+            session.commit()
+            gens[n] = g.id
+            
+        # 2. Mangas (Links directos JPG para que no fallen)
+        lista = [
+            {"t": "Naruto", "a": "Kishimoto", "g": "Shonen", "img": "https://m.media-amazon.com/images/I/81I5D0j0+BL._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "One Piece", "a": "Oda", "g": "Shonen", "img": "https://m.media-amazon.com/images/I/912xRMMRa4L._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Berserk", "a": "Miura", "g": "Seinen", "img": "https://m.media-amazon.com/images/I/81M4u+-WwlL._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Monster", "a": "Urasawa", "g": "Terror", "img": "https://m.media-amazon.com/images/I/8125DiM8z-L._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Sailor Moon", "a": "Takeuchi", "g": "Shojo", "img": "https://m.media-amazon.com/images/I/81h4G2q-sTL._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Slam Dunk", "a": "Inoue", "g": "Deportes", "img": "https://m.media-amazon.com/images/I/8166xA2tJXL._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Dragon Ball", "a": "Toriyama", "g": "Shonen", "img": "https://m.media-amazon.com/images/I/81Fj80j1x+L._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Akira", "a": "Otomo", "g": "Seinen", "img": "https://m.media-amazon.com/images/I/818+2q7F+5L._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Uzumaki", "a": "Junji Ito", "g": "Terror", "img": "https://m.media-amazon.com/images/I/91Ar-16-NcL._AC_UF1000,1000_QL80_.jpg"},
+            {"t": "Nana", "a": "Yazawa", "g": "Shojo", "img": "https://m.media-amazon.com/images/I/61F2Kx+jXhL._AC_UF1000,1000_QL80_.jpg"}
+        ]
+
+        for i in lista:
+            m = Manga(titulo=i["t"], autor=i["a"], genero_id=gens[i["g"]], portada_url=i["img"])
+            session.add(m)
+        
+        session.commit()
+    return {"mensaje": "Datos Listos"}
