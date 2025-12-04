@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="has-background-white-ter">
 
     <nav class="navbar is-dark mb-4">
         <div class="navbar-brand">
@@ -26,33 +26,13 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container is-fluid">
         <div class="columns">
             
             <div class="column is-one-quarter">
-                {% if not usuario %}
-                <div class="box has-background-light">
-                    <h3 class="title is-5">🔐 Acceso</h3>
-                    
-                    <p class="heading">Login</p>
-                    <form action="/login" method="post" class="mb-4">
-                        <input class="input is-small mb-2" name="username" placeholder="Usuario" required>
-                        <input class="input is-small mb-2" type="password" name="password" placeholder="Clave" required>
-                        <button class="button is-info is-small is-fullwidth">Entrar</button>
-                    </form>
-                    
-                    <hr>
-                    <p class="heading">Registro Nuevo</p>
-                    <form action="/registro" method="post">
-                        <input class="input is-small mb-2" name="username" placeholder="Nuevo Usuario" required>
-                        <input class="input is-small mb-2" type="password" name="password" placeholder="Nueva Clave" required>
-                        <button class="button is-primary is-small is-fullwidth">Crear Cuenta</button>
-                    </form>
-                </div>
-                {% endif %}
                 
                 <div class="box">
-                    <h3 class="title is-5">🔎 Filtros</h3>
+                    <h3 class="title is-5"><i class="fas fa-search"></i> Buscar</h3>
                     <form action="/mangas" method="get">
                         <div class="field">
                             <label class="label">Título</label>
@@ -62,40 +42,71 @@
                             <label class="label">Género</label>
                             <div class="select is-fullwidth">
                                 <select name="genero_id">
-                                    <option value="0">Todos</option>
+                                    <option value="0">Todos los géneros</option>
                                     {% for g in generos %}
                                     <option value="{{ g.id }}">{{ g.nombre }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
-                        <button class="button is-dark is-fullwidth mt-2">Filtrar</button>
+                        <button class="button is-info is-fullwidth mt-2">Filtrar</button>
                     </form>
                 </div>
+
+                {% if not usuario %}
+                <div class="box has-background-light">
+                    <h3 class="title is-5">🔐 Acceso</h3>
+                    
+                    <p class="heading">Ya tengo cuenta</p>
+                    <form action="/login" method="post" class="mb-4">
+                        <div class="field">
+                            <p class="control has-icons-left">
+                                <input class="input is-small" name="username" placeholder="Usuario" required>
+                                <span class="icon is-small is-left"><i class="fas fa-user"></i></span>
+                            </p>
+                        </div>
+                        <div class="field">
+                            <p class="control has-icons-left">
+                                <input class="input is-small" type="password" name="password" placeholder="Clave" required>
+                                <span class="icon is-small is-left"><i class="fas fa-lock"></i></span>
+                            </p>
+                        </div>
+                        <button class="button is-dark is-small is-fullwidth">Entrar</button>
+                    </form>
+                    
+                    <hr>
+                    <p class="heading">Crear Usuario Nuevo</p>
+                    <form action="/registro" method="post">
+                        <input class="input is-small mb-2" name="username" placeholder="Nuevo Usuario" required>
+                        <input class="input is-small mb-2" type="password" name="password" placeholder="Nueva Clave" required>
+                        <button class="button is-primary is-small is-fullwidth">Registrarse</button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
 
             <div class="column">
                 <div class="columns is-multiline">
                     {% for manga in mangas %}
-                    <div class="column is-6">
-                        <div class="card">
+                    <div class="column is-one-third-desktop is-half-tablet">
+                        <div class="card h-100">
                             <div class="card-image">
-                                <figure class="image is-3by2">
-                                    <img src="{{ manga.portada_url }}" style="object-fit: cover;">
+                                <figure class="image is-3by4">
+                                    <img src="{{ manga.portada_url }}" alt="Portada" style="object-fit: cover;">
                                 </figure>
                             </div>
                             <div class="card-content">
                                 <p class="title is-5">{{ manga.titulo }}</p>
-                                <p class="subtitle is-7">{{ manga.genero.nombre }} | {{ manga.autor }}</p>
+                                <p class="subtitle is-7 mb-2">{{ manga.genero.nombre }} | {{ manga.autor }}</p>
                                 
-                                <div class="content is-small" style="max-height: 100px; overflow-y: auto; background: #f5f5f5; padding: 5px;">
-                                    <strong>Comentarios:</strong>
+                                <div class="box has-background-white-bis p-2 mt-3" style="max-height: 120px; overflow-y: auto;">
+                                    <h6 class="title is-7 mb-1">Comentarios:</h6>
                                     {% for c in manga.comentarios %}
-                                        <div class="is-size-7 border-bottom">
-                                            <b>{{ c.usuario.username }}:</b> {{ c.texto }}
+                                        <div class="is-size-7 mb-1 border-bottom">
+                                            <strong class="has-text-info">{{ c.usuario.username }}:</strong> {{ c.texto }}
                                         </div>
                                     {% else %}
-                                        <p class="is-italic has-text-grey">Sin comentarios...</p>
+                                        <p class="is-size-7 has-text-grey-light">Sé el primero en opinar.</p>
                                     {% endfor %}
                                 </div>
 
@@ -103,18 +114,24 @@
                                 <form action="/comentar/{{ manga.id }}" method="post" class="mt-2">
                                     <div class="field has-addons">
                                         <div class="control is-expanded">
-                                            <input class="input is-small" name="texto" placeholder="Escribe algo..." required>
+                                            <input class="input is-small" name="texto" placeholder="Opina..." required>
                                         </div>
                                         <div class="control">
-                                            <button class="button is-info is-small">Enviar</button>
+                                            <button class="button is-info is-small"><i class="fas fa-paper-plane"></i></button>
                                         </div>
                                     </div>
                                 </form>
                                 {% else %}
-                                <p class="help has-text-danger text-center">Inicia sesión para comentar</p>
+                                <p class="help has-text-danger has-text-centered mt-2">
+                                    <i class="fas fa-lock"></i> Inicia sesión para comentar
+                                </p>
                                 {% endif %}
                             </div>
                         </div>
+                    </div>
+                    {% else %}
+                    <div class="column is-full">
+                        <div class="notification is-warning">No se encontraron mangas.</div>
                     </div>
                     {% endfor %}
                 </div>

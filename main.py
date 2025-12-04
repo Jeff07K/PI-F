@@ -16,9 +16,9 @@ engine = create_engine(f"sqlite:///{sqlite_file_name}")
 def on_startup():
     SQLModel.metadata.create_all(engine)
 
-# --- SISTEMA DE LOGIN (NUEVO) ---
+# --- SISTEMA DE LOGIN Y REGISTRO ---
 @app.post("/registro")
-def registrar(request: Request, username: str = Form(...), password: str = Form(...)):
+def registrar(username: str = Form(...), password: str = Form(...)):
     with Session(engine) as session:
         user = Usuario(username=username, password=password)
         session.add(user)
@@ -30,7 +30,7 @@ def login(response: Response, username: str = Form(...), password: str = Form(..
     with Session(engine) as session:
         user = session.exec(select(Usuario).where(Usuario.username == username, Usuario.password == password)).first()
         if user:
-            # Guardamos el usuario en una cookie (forma rápida para el examen)
+            # Guardamos el usuario en una cookie
             response = RedirectResponse(url="/mangas", status_code=303)
             response.set_cookie(key="usuario_id", value=str(user.id))
             return response
@@ -42,7 +42,7 @@ def logout(response: Response):
     response.delete_cookie("usuario_id")
     return response
 
-# --- COMENTARIOS (NUEVO) ---
+# --- COMENTARIOS ---
 @app.post("/comentar/{manga_id}")
 def comentar(manga_id: int, texto: str = Form(...), usuario_id: Optional[str] = Cookie(None)):
     if not usuario_id:
@@ -54,9 +54,9 @@ def comentar(manga_id: int, texto: str = Form(...), usuario_id: Optional[str] = 
         session.commit()
     return RedirectResponse(url="/mangas", status_code=303)
 
-# --- RUTA PRINCIPAL (Buscador mejorado) ---
+# --- RUTA PRINCIPAL (Buscador mejorado + Filtro Género) ---
 @app.get("/mangas", response_class=HTMLResponse)
-def listar_mangas(request: Request, buscar: str = None, genero_id: int = None, usuario_id: Optional[str] = Cookie(None)):
+def listar_mangas(request: Request, buscar: str = None, genero_id: int = 0, usuario_id: Optional[str] = Cookie(None)):
     with Session(engine) as session:
         query = select(Manga)
         if buscar:
@@ -67,7 +67,7 @@ def listar_mangas(request: Request, buscar: str = None, genero_id: int = None, u
         mangas = session.exec(query).all()
         generos = session.exec(select(Genero)).all()
         
-        # Verificar si hay usuario logueado
+        # Verificar usuario logueado
         usuario_actual = None
         if usuario_id:
             usuario_actual = session.get(Usuario, int(usuario_id))
@@ -80,7 +80,7 @@ def listar_mangas(request: Request, buscar: str = None, genero_id: int = None, u
         "busqueda_actual": buscar
     })
 
-# --- DATOS CON IMÁGENES ARREGLADAS ---
+# --- DATOS CON IMÁGENES ARREGLADAS (HD) ---
 @app.post("/crear-datos-dummy")
 def crear_datos():
     with Session(engine) as session:
@@ -95,7 +95,7 @@ def crear_datos():
             session.commit()
             gens[n] = g.id
             
-        # 2. Mangas (Links directos JPG para que no fallen)
+        # 2. Mangas (URLs funcionales)
         lista = [
             {"t": "Naruto", "a": "Kishimoto", "g": "Shonen", "img": "https://m.media-amazon.com/images/I/81I5D0j0+BL._AC_UF1000,1000_QL80_.jpg"},
             {"t": "One Piece", "a": "Oda", "g": "Shonen", "img": "https://m.media-amazon.com/images/I/912xRMMRa4L._AC_UF1000,1000_QL80_.jpg"},
