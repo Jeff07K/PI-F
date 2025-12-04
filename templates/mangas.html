@@ -2,36 +2,69 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Colección de Mangas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Un poco de CSS extra para las portadas */
+        .portada-manga {
+            height: 350px;
+            object-fit: cover; /* Evita que la imagen se estire feo */
+            width: 100%;
+        }
+    </style>
 </head>
-<body class="container mt-5">
+<body class="bg-light">
 
-    <h1 class="mb-4">Mi Biblioteca Otaku</h1>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/mangas">📚 Manga Manager</a>
+        </div>
+    </nav>
 
-    <form action="/mangas" method="get" class="d-flex mb-5">
-        <input class="form-control me-2" type="search" name="buscar" 
-               placeholder="Busca por título (ej: Naruto)" 
-               value="{{ busqueda_actual if busqueda_actual }}">
-        <button class="btn btn-outline-success" type="submit">Buscar</button>
-        <a href="/mangas" class="btn btn-outline-secondary ms-2">Limpiar</a>
-    </form>
-
-    <div class="row">
-        {% for manga in mangas %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <img src="{{ manga.portada_url }}" class="card-img-top" alt="Portada" style="height: 300px; object-fit: cover;">
-                <div class="card-body">
-                    <h5 class="card-title">{{ manga.titulo }}</h5>
-                    <p class="card-text">Autor: {{ manga.autor }}</p>
-                    </div>
+    <div class="container">
+        
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <h1>Mi Colección</h1>
+                <p class="text-muted">Gestionando <span class="badge bg-primary">{{ mangas|length }}</span> títulos</p>
+            </div>
+            <div class="col-md-6">
+                <form action="/mangas" method="get" class="d-flex gap-2">
+                    <input class="form-control" type="search" name="buscar" 
+                           placeholder="Buscar por título (ej: Naruto)..." 
+                           value="{{ busqueda_actual if busqueda_actual }}">
+                    <button class="btn btn-success" type="submit">Buscar</button>
+                    <a href="/mangas" class="btn btn-secondary">Limpiar</a>
+                </form>
             </div>
         </div>
-        {% else %}
-        <div class="alert alert-warning">No se encontraron mangas con ese nombre :(</div>
-        {% endfor %}
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for manga in mangas %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <img src="{{ manga.portada_url }}" class="card-img-top portada-manga" alt="{{ manga.titulo }}">
+                    
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">{{ manga.titulo }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Autor: {{ manga.autor }}</h6>
+                        <span class="badge rounded-pill text-bg-info">Manga</span>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <small class="text-muted">ID: #{{ manga.id }}</small>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-5">
+                <h3 class="text-muted">😢 No encontré mangas con ese nombre.</h3>
+                <a href="/mangas" class="btn btn-primary mt-3">Ver todos</a>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
