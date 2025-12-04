@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import SQLModel, Session, create_engine, select
-from models import Genero, Manga  # Asegúrate de que models.py tenga las clases que creamos
+from models import Genero, Manga  # Asegúrate de que models.py tenga las clases
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
