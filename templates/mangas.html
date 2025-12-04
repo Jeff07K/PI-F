@@ -4,67 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manga Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Un poco de CSS extra para las portadas */
-        .portada-manga {
-            height: 350px;
-            object-fit: cover; /* Evita que la imagen se estire feo */
-            width: 100%;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-light">
+<body class="has-background-white-ter">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="/mangas">📚 Manga Manager</a>
+    <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item has-text-weight-bold is-size-4" href="/mangas">
+                <span class="icon is-medium mr-2"><i class="fas fa-book-open"></i></span>
+                Manga Manager
+            </a>
         </div>
     </nav>
 
-    <div class="container">
-        
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
-                <h1>Mi Colección</h1>
-                <p class="text-muted">Gestionando <span class="badge bg-primary">{{ mangas|length }}</span> títulos</p>
-            </div>
-            <div class="col-md-6">
-                <form action="/mangas" method="get" class="d-flex gap-2">
-                    <input class="form-control" type="search" name="buscar" 
-                           placeholder="Buscar por título (ej: Naruto)..." 
-                           value="{{ busqueda_actual if busqueda_actual }}">
-                    <button class="btn btn-success" type="submit">Buscar</button>
-                    <a href="/mangas" class="btn btn-secondary">Limpiar</a>
-                </form>
-            </div>
-        </div>
-
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for manga in mangas %}
-            <div class="col">
-                <div class="card h-100 shadow-sm border-0">
-                    <img src="{{ manga.portada_url }}" class="card-img-top portada-manga" alt="{{ manga.titulo }}">
-                    
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">{{ manga.titulo }}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">Autor: {{ manga.autor }}</h6>
-                        <span class="badge rounded-pill text-bg-info">Manga</span>
-                    </div>
-                    <div class="card-footer bg-white border-0">
-                        <small class="text-muted">ID: #{{ manga.id }}</small>
-                    </div>
+    <section class="section">
+        <div class="container">
+            
+            <div class="columns is-vcentered mb-6">
+                <div class="column is-half">
+                    <h1 class="title has-text-dark">Mi Colección</h1>
+                    <p class="subtitle">
+                        Total de títulos: <span class="tag is-primary is-medium is-rounded">{{ mangas|length }}</span>
+                    </p>
+                </div>
+                
+                <div class="column is-half">
+                    <form action="/mangas" method="get">
+                        <div class="field has-addons">
+                            <div class="control is-expanded">
+                                <input class="input is-medium is-rounded" type="text" name="buscar" 
+                                       placeholder="Busca por título (ej: Naruto)..." 
+                                       value="{{ busqueda_actual if busqueda_actual }}">
+                            </div>
+                            <div class="control">
+                                <button class="button is-info is-medium is-rounded">
+                                    <span class="icon"><i class="fas fa-search"></i></span>
+                                    <span>Buscar</span>
+                                </button>
+                            </div>
+                            <div class="control">
+                                <a href="/mangas" class="button is-light is-medium is-rounded">Limpiar</a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-            {% else %}
-            <div class="col-12 text-center py-5">
-                <h3 class="text-muted">😢 No encontré mangas con ese nombre.</h3>
-                <a href="/mangas" class="btn btn-primary mt-3">Ver todos</a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <div class="columns is-multiline">
+                {% for manga in mangas %}
+                <div class="column is-one-third-desktop is-half-tablet">
+                    <div class="card">
+                        <div class="card-image">
+                            <figure class="image is-4by3">
+                                <img src="{{ manga.portada_url }}" alt="Portada de {{ manga.titulo }}" style="object-fit: cover;">
+                            </figure>
+                        </div>
+                        
+                        <div class="card-content">
+                            <div class="media">
+                                <div class="media-content">
+                                    <p class="title is-4">{{ manga.titulo }}</p>
+                                    <p class="subtitle is-6">Autor: {{ manga.autor }}</p>
+                                </div>
+                            </div>
+
+                            <div class="content">
+                                <span class="tag is-info is-light">Manga</span>
+                                <span class="tag is-warning is-light">#{{ manga.id }}</span>
+                                <br>
+                                <time datetime="2025-01-01" class="is-size-7 has-text-grey mt-2">Agregado recientemente</time>
+                            </div>
+                        </div>
+                        
+                        <footer class="card-footer">
+                            <a href="#" class="card-footer-item has-text-info">Ver Detalles</a>
+                        </footer>
+                    </div>
+                </div>
+                {% else %}
+                <div class="column is-full">
+                    <div class="notification is-warning is-light has-text-centered">
+                        <h3 class="title is-5">😢 No encontramos mangas con ese nombre.</h3>
+                        <a href="/mangas" class="button is-small is-warning">Ver todos</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
 </body>
 </html>
