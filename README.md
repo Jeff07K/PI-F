@@ -13,6 +13,7 @@ Relación: **Género (1) ----> (N) Mangas**
 2. Instalar dependencias: `pip install -r requirements.txt`
 3. Ejecutar: `uvicorn main:app --reload`
 4. Ir a `/mangas` para ver el dashboard.
+5. `https://biblioteca-manga.onrender.com/mangas`
 
 ## Tecnologías
 - Python (FastAPI)
