@@ -79,9 +79,9 @@ def crear_datos():
         datos = [
             {"t": "Naruto", "a": "Kishimoto", "g": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg"},
             {"t": "One Piece", "a": "Oda", "g": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg"},
-            {"t": "Dragon Ball", "a": "Toriyama", "g": "Shonen", "img": "https://upload.wikimedia.org/wikipedia/en/c/c9/DB_Vol_1_cover.jpg"},
-            {"t": "Sailor Moon", "a": "Takeuchi", "g": "Shojo", "img": "https://upload.wikimedia.org/wikipedia/en/0/06/Sailor_Moon_Volume_1_Kanzeban_Cover.jpg"},
-            {"t": "Uzumaki", "a": "Junji Ito", "g": "Terror", "img": "https://upload.wikimedia.org/wikipedia/en/thumb/9/90/Uzumaki_manga_cover.jpg/220px-Uzumaki_manga_cover.jpg"}
+            {"t": "Dragon Ball", "a": "Toriyama", "g": "Shonen", "img": "https://i.pinimg.com/736x/e2/07/2a/e2072a5a25e2e12cd9e2629d18464194.jpg"},
+            {"t": "Sailor Moon", "a": "Takeuchi", "g": "Shojo", "img": "https://i.pinimg.com/1200x/c6/81/5d/c6815d9f6b1e7fefedb1d29d5e48e580.jpg"},
+            {"t": "Uzumaki", "a": "Junji Ito", "g": "Terror", "img": "https://i.pinimg.com/736x/28/53/9e/28539eb00611994ff252b03573c1ec51.jpg"}
         ]
         for d in datos:
             session.add(Manga(titulo=d["t"], autor=d["a"], genero_id=mapa[d["g"]], portada_url=d["img"]))
